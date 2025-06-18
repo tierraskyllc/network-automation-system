@@ -115,7 +115,7 @@ class AuditLog(Base):
     compliance_tags = Column(ARRAY(String), default=list)
     
     # Metadata
-    metadata = Column(JSON, default=dict)
+    audit_metadata = Column(JSON, default=dict)
     tags = Column(ARRAY(String), default=list)
     
     # Relationships
@@ -187,7 +187,7 @@ class SecurityEvent(Base):
     last_seen = Column(DateTime(timezone=True))
     
     # Metadata
-    metadata = Column(JSON, default=dict)
+    event_metadata = Column(JSON, default=dict)
     tags = Column(ARRAY(String), default=list)
     
     # Timestamps
@@ -234,7 +234,7 @@ class ComplianceRule(Base):
     
     # Metadata
     tags = Column(ARRAY(String), default=list)
-    metadata = Column(JSON, default=dict)
+    rule_metadata = Column(JSON, default=dict)
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -8,7 +8,7 @@ from .device import Device, DeviceCredential, DeviceCapability
 from .topology import NetworkTopology, TopologyLink, TopologyNode
 from .command import Command, CommandExecution, CommandTemplate
 from .workflow import Workflow, WorkflowExecution, WorkflowStep
-from .user import User, Role, Permission, UserRole
+from .user import User, Role, Permission
 from .audit import AuditLog, SecurityEvent
 from .mcp import MCPContext, MCPTool, MCPResource
 
@@ -37,7 +37,6 @@ __all__ = [
     "User",
     "Role",
     "Permission",
-    "UserRole",
     
     # Audit models
     "AuditLog",

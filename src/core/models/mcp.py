@@ -60,7 +60,7 @@ class MCPContext(Base):
     
     # Context data
     context_data = Column(JSON, nullable=False, default=dict)
-    metadata = Column(JSON, default=dict)
+    context_metadata = Column(JSON, default=dict)
     
     # Scope and filters
     device_scope = Column(ARRAY(Integer), default=list)  # Device IDs
@@ -140,7 +140,7 @@ class MCPTool(Base):
     
     # Metadata
     tags = Column(ARRAY(String), default=list)
-    metadata = Column(JSON, default=dict)
+    tool_metadata = Column(JSON, default=dict)
     documentation = Column(Text)
     examples = Column(JSON, default=list)
     
@@ -203,7 +203,7 @@ class MCPResource(Base):
     
     # Metadata
     tags = Column(ARRAY(String), default=list)
-    metadata = Column(JSON, default=dict)
+    resource_metadata = Column(JSON, default=dict)
     
     # Versioning
     version = Column(Integer, default=1)

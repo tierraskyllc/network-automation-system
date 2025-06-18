@@ -83,7 +83,7 @@ class Device(Base):
     # Metadata
     description = Column(Text)
     tags = Column(ARRAY(String), default=list)
-    metadata = Column(JSON, default=dict)
+    device_metadata = Column(JSON, default=dict)
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -143,7 +143,7 @@ class DeviceCapability(Base):
     
     # Metadata
     description = Column(Text)
-    metadata = Column(JSON, default=dict)
+    capability_metadata = Column(JSON, default=dict)
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())

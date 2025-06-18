@@ -17,15 +17,15 @@ from .rbac import (
     PermissionChecker,
     ResourceAccessControl,
 )
-from .vault import (
-    VaultManager,
-    CredentialManager,
-    SecretManager,
-)
-from .encryption import (
-    EncryptionManager,
-    CryptoUtils,
-)
+# from .vault import (
+#     VaultManager,
+#     CredentialManager,
+#     SecretManager,
+# )
+# from .encryption import (
+#     EncryptionManager,
+#     CryptoUtils,
+# )
 
 __all__ = [
     # Authentication
@@ -41,11 +41,11 @@ __all__ = [
     "ResourceAccessControl",
     
     # Credential Management
-    "VaultManager",
-    "CredentialManager",
-    "SecretManager",
-    
+    # "VaultManager",
+    # "CredentialManager",
+    # "SecretManager",
+
     # Encryption
-    "EncryptionManager",
-    "CryptoUtils",
+    # "EncryptionManager",
+    # "CryptoUtils",
 ]

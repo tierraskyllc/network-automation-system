@@ -8,8 +8,9 @@ with environment variable support.
 from functools import lru_cache
 from typing import List, Optional
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
-import os
+
+
+
 
 
 class Settings(BaseSettings):
@@ -46,10 +47,10 @@ class Settings(BaseSettings):
     REDIS_PASSWORD: str = ""
     
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8080"
     CORS_CREDENTIALS: bool = True
-    CORS_METHODS: List[str] = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    CORS_HEADERS: List[str] = ["*"]
+    CORS_METHODS: str = "GET,POST,PUT,DELETE,OPTIONS"
+    CORS_HEADERS: str = "*"
     
     # Security
     JWT_SECRET_KEY: str = "your-super-secret-jwt-key-change-this-in-production"
@@ -58,8 +59,8 @@ class Settings(BaseSettings):
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
     # Network Security
-    ALLOWED_HOSTS: List[str] = ["localhost", "127.0.0.1", "0.0.0.0"]
-    TRUSTED_PROXIES: List[str] = ["127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+    ALLOWED_HOSTS: str = "localhost,127.0.0.1,0.0.0.0"
+    TRUSTED_PROXIES: str = "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
     
     # AI/ML
     OPENAI_API_KEY: Optional[str] = None
@@ -99,6 +100,10 @@ class Settings(BaseSettings):
     PROMETHEUS_ENABLED: bool = True
     PROMETHEUS_PORT: int = 9090
     PROMETHEUS_METRICS_PATH: str = "/metrics"
+
+    # Grafana
+    GRAFANA_ADMIN_USER: str = "admin"
+    GRAFANA_ADMIN_PASSWORD: str = "admin"
     
     # Logging
     LOG_FORMAT: str = "json"
@@ -118,6 +123,19 @@ class Settings(BaseSettings):
     CMDB_URL: Optional[str] = None
     CMDB_USERNAME: Optional[str] = None
     CMDB_PASSWORD: Optional[str] = None
+
+    # IPAM Integration
+    IPAM_ENABLED: bool = False
+    IPAM_TYPE: str = "infoblox"
+    IPAM_URL: Optional[str] = None
+    IPAM_USERNAME: Optional[str] = None
+    IPAM_PASSWORD: Optional[str] = None
+
+    # SIEM Integration
+    SIEM_ENABLED: bool = False
+    SIEM_TYPE: str = "splunk"
+    SIEM_URL: Optional[str] = None
+    SIEM_TOKEN: Optional[str] = None
     
     # Workflows
     WORKFLOW_MAX_STEPS: int = 50
@@ -166,46 +184,42 @@ class Settings(BaseSettings):
     FEATURE_ML_ANALYTICS: bool = False
     FEATURE_PREDICTIVE_MAINTENANCE: bool = False
     FEATURE_AUTOMATED_REMEDIATION: bool = False
+
+    # Properties to convert string fields to lists
+    @property
+    def cors_origins_list(self) -> List[str]:
+        """Get CORS origins as a list"""
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+
+    @property
+    def cors_methods_list(self) -> List[str]:
+        """Get CORS methods as a list"""
+        return [method.strip() for method in self.CORS_METHODS.split(",") if method.strip()]
+
+    @property
+    def cors_headers_list(self) -> List[str]:
+        """Get CORS headers as a list"""
+        return [header.strip() for header in self.CORS_HEADERS.split(",") if header.strip()]
+
+    @property
+    def allowed_hosts_list(self) -> List[str]:
+        """Get allowed hosts as a list"""
+        return [host.strip() for host in self.ALLOWED_HOSTS.split(",") if host.strip()]
+
+    @property
+    def trusted_proxies_list(self) -> List[str]:
+        """Get trusted proxies as a list"""
+        return [proxy.strip() for proxy in self.TRUSTED_PROXIES.split(",") if proxy.strip()]
     
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, v):
-        if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
-        return v
 
-    @field_validator("CORS_METHODS", mode="before")
-    @classmethod
-    def parse_cors_methods(cls, v):
-        if isinstance(v, str):
-            return [method.strip() for method in v.split(",")]
-        return v
-
-    @field_validator("CORS_HEADERS", mode="before")
-    @classmethod
-    def parse_cors_headers(cls, v):
-        if isinstance(v, str):
-            return [header.strip() for header in v.split(",")]
-        return v
-
-    @field_validator("ALLOWED_HOSTS", mode="before")
-    @classmethod
-    def parse_allowed_hosts(cls, v):
-        if isinstance(v, str):
-            return [host.strip() for host in v.split(",")]
-        return v
-
-    @field_validator("TRUSTED_PROXIES", mode="before")
-    @classmethod
-    def parse_trusted_proxies(cls, v):
-        if isinstance(v, str):
-            return [proxy.strip() for proxy in v.split(",")]
-        return v
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "env_parse_none_str": None,
+        "env_nested_delimiter": "__",
+    }
 
 
 @lru_cache()

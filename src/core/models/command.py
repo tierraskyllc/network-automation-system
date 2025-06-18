@@ -129,7 +129,7 @@ class CommandExecution(Base):
     approved_at = Column(DateTime(timezone=True))
     
     # Metadata
-    metadata = Column(JSON, default=dict)
+    execution_metadata = Column(JSON, default=dict)
     tags = Column(ARRAY(String), default=list)
     
     # Timestamps

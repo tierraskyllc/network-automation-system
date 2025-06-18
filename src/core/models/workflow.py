@@ -144,7 +144,7 @@ class WorkflowExecution(Base):
     session_id = Column(String(255))
     
     # Metadata
-    metadata = Column(JSON, default=dict)
+    execution_metadata = Column(JSON, default=dict)
     tags = Column(ARRAY(String), default=list)
     
     # Timestamps
@@ -199,7 +199,7 @@ class WorkflowStep(Base):
     blocks = Column(ARRAY(String), default=list)  # Step names this step blocks
     
     # Metadata
-    metadata = Column(JSON, default=dict)
+    step_metadata = Column(JSON, default=dict)
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())
