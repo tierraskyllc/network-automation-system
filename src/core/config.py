@@ -7,7 +7,8 @@ with environment variable support.
 
 from functools import lru_cache
 from typing import List, Optional
-from pydantic import BaseSettings, validator
+from pydantic_settings import BaseSettings
+from pydantic import field_validator
 import os
 
 
@@ -166,31 +167,36 @@ class Settings(BaseSettings):
     FEATURE_PREDICTIVE_MAINTENANCE: bool = False
     FEATURE_AUTOMATED_REMEDIATION: bool = False
     
-    @validator("CORS_ORIGINS", pre=True)
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
     def parse_cors_origins(cls, v):
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",")]
         return v
-    
-    @validator("CORS_METHODS", pre=True)
+
+    @field_validator("CORS_METHODS", mode="before")
+    @classmethod
     def parse_cors_methods(cls, v):
         if isinstance(v, str):
             return [method.strip() for method in v.split(",")]
         return v
-    
-    @validator("CORS_HEADERS", pre=True)
+
+    @field_validator("CORS_HEADERS", mode="before")
+    @classmethod
     def parse_cors_headers(cls, v):
         if isinstance(v, str):
             return [header.strip() for header in v.split(",")]
         return v
-    
-    @validator("ALLOWED_HOSTS", pre=True)
+
+    @field_validator("ALLOWED_HOSTS", mode="before")
+    @classmethod
     def parse_allowed_hosts(cls, v):
         if isinstance(v, str):
             return [host.strip() for host in v.split(",")]
         return v
-    
-    @validator("TRUSTED_PROXIES", pre=True)
+
+    @field_validator("TRUSTED_PROXIES", mode="before")
+    @classmethod
     def parse_trusted_proxies(cls, v):
         if isinstance(v, str):
             return [proxy.strip() for proxy in v.split(",")]
