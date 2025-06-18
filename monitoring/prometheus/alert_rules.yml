@@ -1,0 +1,231 @@
+# Prometheus Alert Rules for Network Automation System
+groups:
+  - name: network_automation_alerts
+    rules:
+      # API Health Alerts
+      - alert: APIDown
+        expr: up{job="network-automation-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "Network Automation API is down"
+          description: "The Network Automation API has been down for more than 1 minute."
+
+      - alert: APIHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="network-automation-api"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "API high latency detected"
+          description: "95th percentile latency is {{ $value }}s for the last 5 minutes."
+
+      - alert: APIHighErrorRate
+        expr: rate(http_requests_total{job="network-automation-api",status=~"5.."}[5m]) / rate(http_requests_total{job="network-automation-api"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: api
+        annotations:
+          summary: "High API error rate"
+          description: "Error rate is {{ $value | humanizePercentage }} for the last 5 minutes."
+
+      # Database Alerts
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: database
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database has been down for more than 1 minute."
+
+      - alert: PostgreSQLHighConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "PostgreSQL high connection usage"
+          description: "PostgreSQL connection usage is {{ $value | humanizePercentage }}."
+
+      - alert: PostgreSQLSlowQueries
+        expr: rate(pg_stat_database_tup_returned[5m]) / rate(pg_stat_database_tup_fetched[5m]) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "PostgreSQL slow queries detected"
+          description: "PostgreSQL query efficiency is low: {{ $value | humanizePercentage }}."
+
+      # Redis Alerts
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: cache
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache has been down for more than 1 minute."
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: cache
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis memory usage is {{ $value | humanizePercentage }}."
+
+      - alert: RedisHighConnections
+        expr: redis_connected_clients > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: cache
+        annotations:
+          summary: "Redis high connection count"
+          description: "Redis has {{ $value }} connected clients."
+
+      # System Resource Alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}."
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}."
+
+      - alert: LowDiskSpace
+        expr: (node_filesystem_size_bytes - node_filesystem_free_bytes) / node_filesystem_size_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "Low disk space"
+          description: "Disk usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}:{{ $labels.mountpoint }}."
+
+      # Network Device Alerts
+      - alert: NetworkDeviceDown
+        expr: up{job="snmp-devices"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: network
+        annotations:
+          summary: "Network device is unreachable"
+          description: "Network device {{ $labels.instance }} has been unreachable for more than 2 minutes."
+
+      - alert: NetworkInterfaceDown
+        expr: ifOperStatus{job="snmp-devices"} == 2
+        for: 1m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "Network interface is down"
+          description: "Interface {{ $labels.ifDescr }} on {{ $labels.instance }} is down."
+
+      - alert: HighNetworkUtilization
+        expr: (rate(ifHCInOctets[5m]) + rate(ifHCOutOctets[5m])) * 8 / ifHighSpeed > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          service: network
+        annotations:
+          summary: "High network interface utilization"
+          description: "Interface {{ $labels.ifDescr }} on {{ $labels.instance }} utilization is {{ $value | humanizePercentage }}."
+
+      # Application-Specific Alerts
+      - alert: HighFailedCommandExecutions
+        expr: rate(command_executions_total{status="failed"}[5m]) / rate(command_executions_total[5m]) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          service: automation
+        annotations:
+          summary: "High command execution failure rate"
+          description: "Command execution failure rate is {{ $value | humanizePercentage }}."
+
+      - alert: WorkflowExecutionStuck
+        expr: workflow_execution_duration_seconds > 3600
+        for: 0m
+        labels:
+          severity: warning
+          service: automation
+        annotations:
+          summary: "Workflow execution taking too long"
+          description: "Workflow {{ $labels.workflow_name }} has been running for {{ $value | humanizeDuration }}."
+
+      - alert: HighDeviceConnectionFailures
+        expr: rate(device_connections_total{status="failed"}[5m]) / rate(device_connections_total[5m]) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+          service: automation
+        annotations:
+          summary: "High device connection failure rate"
+          description: "Device connection failure rate is {{ $value | humanizePercentage }}."
+
+      # Security Alerts
+      - alert: HighFailedLoginAttempts
+        expr: rate(authentication_attempts_total{status="failed"}[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "High failed login attempts"
+          description: "Failed login attempt rate is {{ $value }} per second."
+
+      - alert: UnauthorizedAccessAttempt
+        expr: rate(authorization_failures_total[5m]) > 5
+        for: 1m
+        labels:
+          severity: warning
+          service: security
+        annotations:
+          summary: "Unauthorized access attempts detected"
+          description: "Authorization failure rate is {{ $value }} per second."
+
+      # Vault Alerts
+      - alert: VaultSealed
+        expr: vault_core_unsealed == 0
+        for: 0m
+        labels:
+          severity: critical
+          service: vault
+        annotations:
+          summary: "Vault is sealed"
+          description: "HashiCorp Vault is sealed and cannot serve requests."
+
+      - alert: VaultDown
+        expr: up{job="vault"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: vault
+        annotations:
+          summary: "Vault is down"
+          description: "HashiCorp Vault has been down for more than 1 minute."

@@ -14,10 +14,19 @@ import time
 from typing import Dict, Any
 
 from ..core.config import get_settings
-from ..core.database import engine, Base
-from .endpoints import health, devices, commands, workflows, topology
+from ..core.database import init_db, close_db
+from ..core.security.rbac import RoleBasedAccessControl
+from .endpoints import (
+    auth_router,
+    devices_router,
+    commands_router,
+    workflows_router,
+    topology_router,
+    users_router,
+    health_router,
+)
 from .middleware.auth import AuthMiddleware
-from .middleware.logging import LoggingMiddleware
+from .middleware.logging import LoggingMiddleware, AuditLoggingMiddleware
 
 # Configure structured logging
 structlog.configure(
@@ -68,6 +77,7 @@ app.add_middleware(
 )
 
 app.add_middleware(LoggingMiddleware)
+app.add_middleware(AuditLoggingMiddleware)
 app.add_middleware(AuthMiddleware)
 
 
@@ -106,12 +116,26 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 async def startup_event():
     """Application startup event"""
     logger.info("Starting Network Automation System")
-    
-    # Create database tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    
-    logger.info("Database tables created/verified")
+
+    try:
+        # Initialize database
+        await init_db()
+        logger.info("Database initialized")
+
+        # Initialize RBAC if needed
+        if settings.ENVIRONMENT == "development":
+            from ..core.database import AsyncSessionLocal
+            async with AsyncSessionLocal() as db:
+                rbac = RoleBasedAccessControl(db)
+                await rbac.initialize_default_roles()
+                await db.commit()
+            logger.info("RBAC initialized")
+
+        logger.info("Application startup completed")
+
+    except Exception as e:
+        logger.error("Application startup failed", error=str(e))
+        raise
 
 
 @app.on_event("shutdown")
@@ -119,13 +143,24 @@ async def shutdown_event():
     """Application shutdown event"""
     logger.info("Shutting down Network Automation System")
 
+    try:
+        await close_db()
+        logger.info("Database connections closed")
+
+    except Exception as e:
+        logger.error("Application shutdown error", error=str(e))
+
+    logger.info("Application shutdown completed")
+
 
 # Include routers
-app.include_router(health.router, prefix="/health", tags=["Health"])
-app.include_router(devices.router, prefix="/api/v1/devices", tags=["Devices"])
-app.include_router(commands.router, prefix="/api/v1/commands", tags=["Commands"])
-app.include_router(workflows.router, prefix="/api/v1/workflows", tags=["Workflows"])
-app.include_router(topology.router, prefix="/api/v1/topology", tags=["Topology"])
+app.include_router(health_router, prefix="/health", tags=["Health"])
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
+app.include_router(users_router, prefix="/api/v1/users", tags=["Users"])
+app.include_router(devices_router, prefix="/api/v1/devices", tags=["Devices"])
+app.include_router(commands_router, prefix="/api/v1/commands", tags=["Commands"])
+app.include_router(workflows_router, prefix="/api/v1/workflows", tags=["Workflows"])
+app.include_router(topology_router, prefix="/api/v1/topology", tags=["Topology"])
 
 
 @app.get("/")
