@@ -64,9 +64,12 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_db() -> None:
     """Initialize database tables"""
+    # Import all models to ensure they are registered
+    from ..models import (
+        user, device, command, workflow, topology, audit, mcp
+    )
+
     async with engine.begin() as conn:
-        # Import all models to ensure they are registered
-        from ..models import *  # noqa
         await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables created/verified")
 
